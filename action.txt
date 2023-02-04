@@ -1,0 +1,54 @@
+--truncate table questions_backup
+--truncate table answers_backup
+
+select * from questions_proto p 
+
+select  count(p.id_question) from questions_proto p -- 2120
+
+
+select  id_task, count(p.id_question) -- 1056 & 1064
+from questions_proto p group by id_task
+order by id_task
+
+select  partition_number, subpartition_number, id_task, count(p.id_question) -- 1056 & 1064
+from questions_proto p group by id_task, partition_number, subpartition_number
+order by partition_number, subpartition_number, id_task
+
+-- Проверяем все ли разделы и подразделы загрузились, не осталось ли хвостов
+select * 
+from questions_proto 
+where substr(url_image,1,8)!='04022023' order by partition_number, subpartition_number, id_task -- 153 
+-------------------------------------------------------------------------------------------------------
+select  count(p.id_question) from questions_proto p -- 2120
+
+# Проверим наличие вопросов без правильных ответов
+select * from questions_proto p
+where p.id_question not in ( select id_question from answers_proto a where a.correctly='Y')
+
+select count(*) from questions_backup --2861
+select count(*) from answers_backup
+select count(*), active from questions q group by active -- 'Y'=2861, 'N'=2647
+
+select count(*) from answers_backup -- 9837
+select * from answers_backup 
+select count(*), active from answers group by active -- 'Y'=9837, 'N'=9569
+
+begin load_questions.backup_active_questions; end;
+begin load_questions.inactivate_questions; end;
+
+select count(*), active from questions q group by active -- 'Y'=1332, 'N'=4176
+select count(*), active from answers group by active -- 'Y'=4793, 'N'=14613
+select  count(p.id_question) from questions_proto p -- 2120
+
+begin load_questions.activate; end;
+
+select count(*), active from questions q group by active -- 'Y'=3452, 'N'=4176
+select count(*), active from answers group by active -- 'Y'=4793, 'N'=14613
+select  count(p.id_question) from questions_proto p -- 2120
+select  count(p.id_question) from answers_proto p -- 6952
+
+select * from questions p
+where p.id_question not in ( select id_question from answers a where a.correctly='Y')
+
+update questions q set active='N' where id_question=7045;
+commit;                        
